@@ -67,7 +67,7 @@ void get_mouse_pos(float* x, float* y) {
 
 void r_init() {
   glfwSetInputMode(r_window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
-  glClearColor(c_blue.r, c_blue.g, c_blue.b, c_blue.a);
+  glClearColor(c_dark.r, c_dark.g, c_dark.b, c_dark.a);
   glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
   glEnable(GL_BLEND);
   r_view = identity<mat4>();
@@ -82,9 +82,9 @@ void r_init() {
   r_smregular = t_init("res/iosevka-term-regular.ttf", 256, 24);
   r_smsemibold = t_init("res/iosevka-term-semibold.ttf", 256, 24);
 
-  r_pos = r_lastpos = vec3(30, 24, 80);
-  r_pitch = r_lastpitch = 0.;
-  r_yaw = r_lastyaw = -90.;
+  r_pos = r_lastpos = l_stageposes[ST_TITLE].first;
+  r_pitch = r_lastpitch = l_stageposes[ST_TITLE].second.y;
+  r_yaw = r_lastyaw = l_stageposes[ST_TITLE].second.x;
 
   get_mouse_pos(&r_mousex, &r_mousey);
   r_lastx = r_mousex, r_lasty = r_mousey;
@@ -138,8 +138,15 @@ void r_update() {
     r_pos = mix(r_pos, l_stageposes[l_stage].first, 0.33f);
     r_pitch = mix(r_pitch, l_stageposes[l_stage].second.y, 0.33f);
     r_yaw = mix(r_yaw, l_stageposes[l_stage].second.x, 0.33f);
-    if (length(r_pos - l_stageposes[l_stage].first) < 0.1f)
+    if (length(r_pos - l_stageposes[l_stage].first) < 0.1f) {
+      if (l_prevstage != l_stage) {
+        for (auto& it : l_entitiesbystage[l_prevstage]) {
+          it->remove = true;
+        }
+        l_entitiesbystage[l_prevstage].clear();
+      }
       l_allowmove = true;
+    }
     return;
   }
 
@@ -179,14 +186,14 @@ void r_draw() {
 
   r_3d();
   l_draw();
-  t_draw(r_lgsemibold, L"&lOpen&dGL&r!", {0, 0, 0}, {.outline=true, .scale=0.167f});
+  t_draw(r_lgsemibold, L"&wOpen&lGL&r!", {0, 0, 0}, {.outline=true, .scale=0.167f});
 
   r_2d();
-  t_draw(r_smregular, STR("&lfps: &w", 1. / r_frametime), {0, r_height - 48.f, 0});
-  t_draw(r_smregular, STR("&lxyz: &w", r_pos), {0, r_height - 72.f, 0});
-  t_draw(r_smregular, STR("&lyaw: &w", r_yaw), {0, r_height - 96.f, 0});
-  t_draw(r_smregular, STR("&lpitch: &w", r_pitch), {0, r_height - 120.f, 0});
-  t_draw(r_smregular, STR("&ltime: &w", glfwGetTime()), {0, r_height - 144.f, 0});
+  t_draw(r_smregular, STR("&lfps: &r", 1. / r_frametime), {0, r_height - 48.f, 0});
+  t_draw(r_smregular, STR("&lxyz: &r", r_pos), {0, r_height - 72.f, 0});
+  t_draw(r_smregular, STR("&lyaw: &r", r_yaw), {0, r_height - 96.f, 0});
+  t_draw(r_smregular, STR("&lpitch: &r", r_pitch), {0, r_height - 120.f, 0});
+  t_draw(r_smregular, STR("&ltime: &r", glfwGetTime()), {0, r_height - 144.f, 0});
 }
 
 // take 3d position and project it to 2d screen space

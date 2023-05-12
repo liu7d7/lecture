@@ -52,25 +52,17 @@ static const int t_texsizei = 8192;
 static const float t_texsize = 8192.f;
 static const wchar_t t_fmt = L'&';
 
-static const std::wstring t_reset = L"&r";
-static const std::wstring t_yellow = L"&y";
-static const std::wstring t_darkblue = L"&d";
-static const std::wstring t_blue = L"&b";
-static const std::wstring t_lightblue = L"&l";
-static const std::wstring t_white = L"&w";
-
 static vec4 with_alpha(vec4 orig, float alpha) {
   return {orig.r, orig.g, orig.b, alpha};
 }
 
 static const std::unordered_map<wchar_t, vec4(*)(vec4 color, vec4 orig)> t_fmts =
   {
-    {t_reset[1],     [](vec4 color, vec4 orig) { return orig; }},
-    {t_yellow[1],    [](vec4 color, vec4 orig) { return with_alpha(c_yellow, orig.a); }},
-    {t_darkblue[1],  [](vec4 color, vec4 orig) { return with_alpha(c_darkblue, orig.a); }},
-    {t_blue[1],      [](vec4 color, vec4 orig) { return with_alpha(c_blue, orig.a); }},
-    {t_lightblue[1], [](vec4 color, vec4 orig) { return with_alpha(c_lightblue, orig.a); }},
-    {t_white[1],     [](vec4 color, vec4 orig) { return with_alpha(c_white, orig.a); }},
+    {L'r', [](vec4 color, vec4 orig) { return orig; }},
+    {L'w', [](vec4 color, vec4 orig) { return with_alpha(c_white, orig.a); }},
+    {L'l', [](vec4 color, vec4 orig) { return with_alpha(c_light, orig.a); }},
+    {L'd', [](vec4 color, vec4 orig) { return with_alpha(c_dark, orig.a); }},
+    {L'p', [](vec4 color, vec4 orig) { return with_alpha(c_pink, orig.a); }},
   };
 
 t_font* t_init(const std::string& path, int num_chars, float height);

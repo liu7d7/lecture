@@ -9,8 +9,8 @@ uniform float aspect;
 
 const float PI = 3.14159265359;
 
-const vec3 objs = vec3(0.98, 0.87, 0.64);
-const vec3 background = vec3(0.42, 0.38, 1.);
+const vec3 objs = vec3(0.93, 0.85, 0.92);
+const vec3 background = vec3(0.06, 0.09, 0.13);
 
 mat4 rot(vec3 axis, float angle) {
   axis = normalize(axis);
@@ -77,7 +77,7 @@ vec3 march(in vec3 ro, in vec3 rd) {
     if (cdist < hitDist) {
       vec3 normal = norm(curPos);
       vec3 col = objs;
-      vec3 Ambient = background * col;
+      vec3 Ambient = vec3(0.81, 0.42, 0.87) * col;
       const vec3 lightPos = vec3(-1, 1., -1);
       vec3 lightDir = normalize(lightPos - curPos);
       float diff = max(dot(lightDir, normal), 0.);

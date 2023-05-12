@@ -32,6 +32,8 @@ enum stage {
   ST_TITLE,
   ST_INTRO,
   ST_PIPELINE,
+  ST_CPU,
+  ST_CPU_EX,
   ST_VERT,
   ST_VERT_EX,
   ST_FRAG,
@@ -39,8 +41,6 @@ enum stage {
   ST_DETOUR_RAYMARCHING,
   ST_DETOUR_RAYMARCHING_EX,
   ST_GEOMETRY,
-  ST_GEOMETRY_EX,
-  ST_TESSELATION,
   ST_RESOURCES,
   ST_SIZE
 };
@@ -48,9 +48,10 @@ enum stage {
 extern std::vector<l_obj*> l_objs;
 extern std::queue<int> l_holes;
 extern stage l_stage;
-extern std::unordered_set<stage> l_initialized;
-extern bool l_allowmove;
+extern stage l_prevstage;
+extern std::array<std::vector<l_obj*>, (int)ST_SIZE> l_entitiesbystage;
 extern const std::vector<std::pair<vec3, vec2>> l_stageposes;
+extern bool l_allowmove;
 
 void l_init();
 void l_update();

@@ -5,7 +5,7 @@
 #include "render.h"
 
 std::pair<int, float> update_ticks() {
-  const double tick_time = 50.f; // 20 tps
+  const float tick_time = 50.f;
   static double last_frame = 0.f;
   static double prev_time = 0.f;
   static double tick_delta = 0.f;
