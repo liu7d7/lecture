@@ -179,13 +179,14 @@ void r_draw() {
 
   r_3d();
   l_draw();
-  t_draw(r_lgsemibold, L"&lopen&dgl&r!", {0, 0, 0}, {.outline=true, .scale=0.167f});
+  t_draw(r_lgsemibold, L"&lOpen&dGL&r!", {0, 0, 0}, {.outline=true, .scale=0.167f});
 
   r_2d();
   t_draw(r_smregular, STR("&lfps: &w", 1. / r_frametime), {0, r_height - 48.f, 0});
   t_draw(r_smregular, STR("&lxyz: &w", r_pos), {0, r_height - 72.f, 0});
   t_draw(r_smregular, STR("&lyaw: &w", r_yaw), {0, r_height - 96.f, 0});
   t_draw(r_smregular, STR("&lpitch: &w", r_pitch), {0, r_height - 120.f, 0});
+  t_draw(r_smregular, STR("&ltime: &w", glfwGetTime()), {0, r_height - 144.f, 0});
 }
 
 // take 3d position and project it to 2d screen space
@@ -207,7 +208,7 @@ vec3 r_project(vec3 pos) {
 
 void r_3d() {
   r_is3d = true;
-  r_proj = perspective(radians(45.f), r_width / r_height, 0.1f, 1000.f);
+  r_proj = perspective(radians(45.f), r_width / r_height, 0.1f, 2500.f);
 
   vec3 pos = mix(r_lastpos, r_pos, r_delta);
   vec3 view_pos = pos;

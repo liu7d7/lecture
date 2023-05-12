@@ -25,7 +25,7 @@ int t_texloc;
 
 t_font* t_init(const std::string& path, int num_chars, float height) {
   if (!t_ginit) {
-    g_initvao(&t_vao, &t_vbo, {3, 2, 4, 1});
+    g_initvao(&t_vao, &t_vbo, {3, 2, 4});
 
     g_initprogram(&t_prog, "res/text.vert", "res/text.frag");
 
@@ -57,9 +57,9 @@ t_font* t_init(const std::string& path, int num_chars, float height) {
   if (!stbtt_InitFont(&font_info, buf, 0)) throw std::runtime_error("failed to init font");
 
   stbtt_pack_context pack_ctx;
-  auto* bitmap = new byte[2048 * 2048];
-  if (!stbtt_PackBegin(&pack_ctx, bitmap, 2048, 2048, 0, 1, nullptr)) throw std::runtime_error("failed to init font");
-  stbtt_PackSetOversampling(&pack_ctx, 2, 2);
+  auto* bitmap = new byte[t_texsizei * t_texsizei];
+  if (!stbtt_PackBegin(&pack_ctx, bitmap, t_texsizei, t_texsizei, 0, 1, nullptr)) throw std::runtime_error("failed to init font");
+  stbtt_PackSetOversampling(&pack_ctx, 4, 4);
   stbtt_PackFontRange(&pack_ctx, buf, 0, height, 32, num_chars, f->chars);
   stbtt_PackEnd(&pack_ctx);
 
@@ -68,8 +68,8 @@ t_font* t_init(const std::string& path, int num_chars, float height) {
   f->ascent = (float) ascent * stbtt_ScaleForMappingEmToPixels(&font_info, height);
 
   glCreateTextures(GL_TEXTURE_2D, 1, &f->texture);
-  glTextureStorage2D(f->texture, 1, GL_R8, 2048, 2048);
-  glTextureSubImage2D(f->texture, 0, 0, 0, 2048, 2048, GL_RED, GL_UNSIGNED_BYTE, bitmap);
+  glTextureStorage2D(f->texture, 1, GL_R8, t_texsizei, t_texsizei);
+  glTextureSubImage2D(f->texture, 0, 0, 0, t_texsizei, t_texsizei, GL_RED, GL_UNSIGNED_BYTE, bitmap);
   glTextureParameteri(f->texture, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
   glTextureParameteri(f->texture, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
   glTextureParameteri(f->texture, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
@@ -120,13 +120,13 @@ void t_draw(t_font* font, const std::wstring& str, vec3 pos, t_style style) {
       float dy1s = d.y - pc.yoff2 * style.scale;
       float dz1s = d.z + pc.xoff2 * style.scale * axis.y;
 
-      std::array<float, 6 * t_vsize> verts = {
-        dxs, dys, dzs, (float) pc.x0 / 2048.f, (float) pc.y0 / 2048.f, color.x, color.y, color.z, color.w, style.outline,
-        dxs, dy1s, dzs, (float) pc.x0 / 2048.f, (float) pc.y1 / 2048.f, color.x, color.y, color.z, color.w, style.outline,
-        dx1s, dys, dz1s, (float) pc.x1 / 2048.f, (float) pc.y0 / 2048.f, color.x, color.y, color.z, color.w, style.outline,
-        dx1s, dys, dz1s, (float) pc.x1 / 2048.f, (float) pc.y0 / 2048.f, color.x, color.y, color.z, color.w, style.outline,
-        dxs, dy1s, dzs, (float) pc.x0 / 2048.f, (float) pc.y1 / 2048.f, color.x, color.y, color.z, color.w, style.outline,
-        dx1s, dy1s, dz1s, (float) pc.x1 / 2048.f, (float) pc.y1 / 2048.f, color.x, color.y, color.z, color.w, style.outline,
+      std::array<float, 6 * t_vsize> verts {
+        dxs, dys, dzs, (float) pc.x0 / t_texsize, (float) pc.y0 / t_texsize, color.x, color.y, color.z, color.w,
+        dxs, dy1s, dzs, (float) pc.x0 / t_texsize, (float) pc.y1 / t_texsize, color.x, color.y, color.z, color.w,
+        dx1s, dys, dz1s, (float) pc.x1 / t_texsize, (float) pc.y0 / t_texsize, color.x, color.y, color.z, color.w,
+        dx1s, dys, dz1s, (float) pc.x1 / t_texsize, (float) pc.y0 / t_texsize, color.x, color.y, color.z, color.w,
+        dxs, dy1s, dzs, (float) pc.x0 / t_texsize, (float) pc.y1 / t_texsize, color.x, color.y, color.z, color.w,
+        dx1s, dy1s, dz1s, (float) pc.x1 / t_texsize, (float) pc.y1 / t_texsize, color.x, color.y, color.z, color.w,
       };
 
       t_verts.insert(t_verts.end(), verts.begin(), verts.end());

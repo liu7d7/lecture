@@ -53,9 +53,31 @@ static void g_initprogram(uint* prog, const std::string& vs, const std::string& 
   glShaderSource(fsh, 1, &fs_src, nullptr);
   if (!gs.empty()) glShaderSource(gsh, 1, &gs_src, nullptr);
 
+  int status;
+
   glCompileShader(vsh);
+  glGetShaderiv(vsh, GL_COMPILE_STATUS, &status);
+  if (status != GL_TRUE) {
+    char log[512];
+    glGetShaderInfoLog(vsh, 512, nullptr, log);
+    throw std::runtime_error(std::string("failed to compile vertex shader: ") + log);
+  }
   glCompileShader(fsh);
-  if (!gs.empty()) glCompileShader(gsh);
+  glGetShaderiv(fsh, GL_COMPILE_STATUS, &status);
+  if (status != GL_TRUE) {
+    char log[512];
+    glGetShaderInfoLog(fsh, 512, nullptr, log);
+    throw std::runtime_error(std::string("failed to compile fragment shader: ") + log);
+  }
+  if (!gs.empty()) {
+    glCompileShader(gsh);
+    glGetShaderiv(gsh, GL_COMPILE_STATUS, &status);
+    if (status != GL_TRUE) {
+      char log[512];
+      glGetShaderInfoLog(gsh, 512, nullptr, log);
+      throw std::runtime_error(std::string("failed to compile geometry shader: ") + log);
+    }
+  }
 
   *prog = glCreateProgram();
 
@@ -64,6 +86,12 @@ static void g_initprogram(uint* prog, const std::string& vs, const std::string& 
   if (!gs.empty()) glAttachShader(*prog, gsh);
 
   glLinkProgram(*prog);
+  glGetProgramiv(*prog, GL_LINK_STATUS, &status);
+  if (status != GL_TRUE) {
+    char log[512];
+    glGetProgramInfoLog(*prog, 512, nullptr, log);
+    throw std::runtime_error(std::string("failed to link program: ") + log);
+  }
 
   glDeleteShader(vsh);
   glDeleteShader(fsh);

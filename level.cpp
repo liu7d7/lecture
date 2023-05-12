@@ -1,5 +1,4 @@
 #include <array>
-#include <fstream>
 #include <iostream>
 #include <utility>
 #include "level.h"
@@ -87,22 +86,20 @@ void l_sphere::internal_draw() {
   vec3 p2d = r_project(p);
   if (p2d.z < 0) return;
 
-  auto verts_off = verts;
-
   for (int i = 0; i < 6; i++) {
-    verts_off[i * 10 + 3] += p2d.x;
-    verts_off[i * 10 + 4] += p2d.y;
+    verts[i * 10 + 3] = p2d.x;
+    verts[i * 10 + 4] = p2d.y;
   }
 
   glUseProgram(l_sphereprog);
   glUniformMatrix4fv(l_projloc, 1, GL_FALSE, value_ptr(r_proj));
   glUniform1f(l_radloc, radius);
-  glNamedBufferData(l_spherevbo, sizeof(float) * 6 * l_spherevsize, verts_off.data(), GL_DYNAMIC_DRAW);
+  glNamedBufferData(l_spherevbo, sizeof(float) * 6 * l_spherevsize, verts.data(), GL_DYNAMIC_DRAW);
   glBindVertexArray(l_spherevao);
   glDrawArrays(GL_TRIANGLES, 0, 6);
 }
 
-l_sphere::l_sphere(float rad, vec4 color) : radius(rad), color(color), verts(l_spheredefaults(rad, color)) {
+l_sphere::l_sphere(float rad, vec4 color) : radius(rad), color(color), verts(l_spheredefaults(rad * 1.25f, color)) {
   is2d = true;
 
   if (!l_sphereinit) {
@@ -121,7 +118,7 @@ struct l_demo : public l_obj {
   uint program = 0;
   uint vao = 0;
   uint vbo = 0;
-  uint size = 0;
+  int size = 0;
   void (*uniforms)(l_demo*) = nullptr;
 
   l_demo(const std::string& vs, const std::string& fs, const std::vector<int>& attribs, std::vector<float> vertices, void (*uniforms)(l_demo*));
@@ -138,8 +135,8 @@ l_demo::l_demo(const std::string& vs, const std::string& fs, const std::vector<i
 
 void l_demo::internal_draw() {
   glUseProgram(program);
-  glBindVertexArray(vao);
   uniforms(this);
+  glBindVertexArray(vao);
   glDrawArrays(GL_TRIANGLES, 0, size);
 }
 
@@ -149,13 +146,22 @@ struct l_emitter : public l_obj {
   float rand;
   float next_rand;
   float last_emit;
+  bool first = true;
 
-  l_emitter(l_obj* (*f)(vec3), float delay, float rand) : f(f), delay(delay), rand(rand), next_rand(0), last_emit((float)glfwGetTime() * 1000.f) {}
+  l_emitter(l_obj* (*f)(vec3), float delay, float rand);
 
   void update() override;
 };
 
+l_emitter::l_emitter(l_obj* (*f)(vec3), float delay, float rand) : f(f), delay(delay), rand(rand), next_rand(0), last_emit((float)glfwGetTime() * 1000.f) {}
+
 void l_emitter::update() {
+  if (first) {
+    first = false;
+    for (int i = 0; i < 100; i++) {
+      l_objstoadd.push_back(f(pos));
+    }
+  }
   if ((float) glfwGetTime() * 1000.f > last_emit + delay + next_rand) {
     next_rand = (float) (rand * (float)(::rand() % 1000 - 500) / 500.f);
     last_emit = (float) glfwGetTime() * 1000.f;
@@ -189,7 +195,7 @@ void l_init() {
     return t;
   };
 
-  auto* emitter = new l_emitter(f, 500.f, 100.f);
+  auto* emitter = new l_emitter(f, 125.f, 25.f);
 
   emitter->pos = emitter->last_pos = vec3(30, 24, -80);
   l_objs.push_back(emitter);
@@ -291,10 +297,10 @@ const std::vector<std::wstring> l_vertinfo {
 const std::vector<std::wstring> l_vertexinfo {
   L"&y#version 460&r",
   L"",
-  L"layout (location = 0) in &dvec3&r pos;",
-  L"layout (location = 1) in &dvec3&r color;",
+  L"layout (location = 0) &yin&r &dvec3&r pos;",
+  L"layout (location = 1) &yin&r &dvec3&r color;",
   L"",
-  L"out &dvec3&r v_color;",
+  L"&yout&r &dvec3&r v_color;",
   L"",
   L"&yuniform&r &dvec3&r translation;",
   L"&yuniform&r &dmat4&r view;",
@@ -308,6 +314,75 @@ const std::vector<std::wstring> l_vertexinfo {
   L"  &ygl_Position&r = proj * view * &dvec4&r(final, 1.);",
   L"  v_color = color;",
   L"}"
+};
+
+const std::vector<std::wstring> l_fragtitle {
+  L"The &yFragment Shader&r"
+};
+
+const std::vector<std::wstring> l_fraginfo {
+  L"- The Fragment Shader is the &yfinal stage&r of the pipeline.",
+  L"",
+  L"- It is responsible for &yprocessing&r fragments into &ycolor&r",
+  L"  and &ydepth&r information.",
+  L"",
+  L"- Lighting, texturing, and post-processing happen here.",
+  L"  > The vertex information and &yfragCoord&r, or position",
+  L"    of the fragment, can be used to accomplish this."
+};
+
+const std::vector<std::wstring> l_fragexinfo {
+  L"&y#version 460&r",
+  L"",
+  L"&yuniform&r &dfloat&r time;",
+  L"&yuniform&r &dfloat&r size;",
+  L"",
+  L"&yin&r &dvec2&r v_uv;",
+  L"&yin&r &dvec2&r v_pos;",
+  L"",
+  L"&yout&r &dvec4&r f_color;",
+  L"",
+  L"&dfloat&r transition(&dvec2&r pos) {",
+  L"  &dfloat&r xFraction = &yfract&r(pos.x / size);",
+  L"  &dfloat&r yFraction = &yfract&r(pos.y / size);",
+  L"  &dfloat&r xDistance = &yabs&r(xFraction - 0.5);",
+  L"  &dfloat&r yDistance = &yabs&r(yFraction - 0.5);",
+  L"  &yreturn&r &dfloat&r(xDistance + yDistance + v_pos.x + v_pos.y > time * 4);",
+  L"}",
+  L"",
+  L"&dvoid&r &ymain&r() {",
+  L"  f_color = &dvec4&r(&dvec3&r(transition(&ygl_FragCoord&r.xy)), 1.0);",
+  L"}",
+};
+
+const std::vector<std::wstring> l_raymarchingtitle {
+  L"&yRaymarching&r"
+};
+
+const std::vector<std::wstring> l_raymarchinginfo {
+  L"- &yRaymarching&r is a rendering technique where objects are defined by",
+  L"  &ydistance functions&r.",
+  L"",
+  L"- For each fragment, a ray is cast from the camera that will define the",
+  L"  color of the fragment.",
+  L"  > When a ray intersects an object, the ray stops being marched along",
+  L"    and the color of the object is returned.",
+  L"",
+  L"- By using &ymod&r on the position of the ray, &yrepeating patterns&r can be created.",
+};
+
+const std::vector<std::wstring> l_geometrytitle {
+  L"The &yGeometry Shader&r"
+};
+
+const std::vector<std::wstring> l_geometryinfo {
+  L"- The Geometry Shader is an &yoptional&r stage of the pipeline.",
+  L"",
+  L"- The Geometry Shader can be used to transform existing geometry",
+  L"  uploaded by the CPU into new geometry.",
+  L"",
+  L"- Common uses include making &ywide lines&r, displaying the &ynormals&r",
+  L"  of triangle meshes, and generating &yvoxels&r from single vertices."
 };
 
 void l_onenter() {
@@ -329,29 +404,93 @@ void l_onenter() {
     case ST_VERT_EX: {
       l_objs.push_back((new l_text(r_mdsemibold, l_verttitle, 72.f, {.outline=false, .scale=0.167f, .axis=vec2(1., 0.5)}))->at({100, 55, -400}));
       l_objs.push_back((new l_text(r_smsemibold, l_vertexinfo, 24.f, {.outline=false, .scale=0.167f, .axis=vec2(1., 0.5)}))->at({100, 45, -400}));
-      const float scale = 30.f;
+      const float scale = 50.f;
       l_objs.push_back((new l_demo("res/vertdemo.vert", "res/vertdemo.frag", { 3, 4 }, {
-                                     -0.5f * scale, 0.000f * scale, -0.28f * scale, 1.f, 0.f, 0.f, 1.f,
-                                     +0.5f * scale, 0.000f * scale, -0.28f * scale, 0.f, 1.f, 0.f, 1.f,
-                                     +0.0f * scale, 0.816f * scale, +0.00f * scale, 1.f, 1.f, 1.f, 1.f,
+        -0.5f * scale, 0.000f * scale, -0.28f * scale, 1.f, 0.f, 0.f, 1.f,
+        +0.5f * scale, 0.000f * scale, -0.28f * scale, 0.f, 1.f, 0.f, 1.f,
+        +0.0f * scale, 0.816f * scale, +0.00f * scale, 1.f, 1.f, 1.f, 1.f,
 
-                                     +0.0f * scale, 0.000f * scale, +0.58f * scale, 0.f, 0.f, 1.f, 1.f,
-                                     +0.5f * scale, 0.000f * scale, -0.28f * scale, 0.f, 1.f, 0.f, 1.f,
-                                     +0.0f * scale, 0.816f * scale, +0.00f * scale, 1.f, 1.f, 1.f, 1.f,
+        +0.0f * scale, 0.000f * scale, +0.58f * scale, 0.f, 0.f, 1.f, 1.f,
+        +0.5f * scale, 0.000f * scale, -0.28f * scale, 0.f, 1.f, 0.f, 1.f,
+        +0.0f * scale, 0.816f * scale, +0.00f * scale, 1.f, 1.f, 1.f, 1.f,
 
-                                     +0.0f * scale, 0.000f * scale, +0.58f * scale, 0.f, 0.f, 1.f, 1.f,
-                                     -0.5f * scale, 0.000f * scale, -0.28f * scale, 1.f, 0.f, 0.f, 1.f,
-                                     +0.0f * scale, 0.816f * scale, +0.00f * scale, 1.f, 1.f, 1.f, 1.f,
+        +0.0f * scale, 0.000f * scale, +0.58f * scale, 0.f, 0.f, 1.f, 1.f,
+        -0.5f * scale, 0.000f * scale, -0.28f * scale, 1.f, 0.f, 0.f, 1.f,
+        +0.0f * scale, 0.816f * scale, +0.00f * scale, 1.f, 1.f, 1.f, 1.f,
 
-                                     -0.5f * scale, 0.000f * scale, -0.28f * scale, 1.f, 0.f, 0.f, 1.f,
-                                     +0.5f * scale, 0.000f * scale, -0.28f * scale, 0.f, 1.f, 0.f, 1.f,
-                                     +0.0f * scale, 0.000f * scale, +0.58f * scale, 0.f, 0.f, 1.f, 1.f,
-                                   }, [](l_demo* self) {
-                                     glUniform3f(glGetUniformLocation(self->program, "translation"), self->pos.x, self->pos.y, self->pos.z);
-                                     glUniformMatrix4fv(glGetUniformLocation(self->program, "view"), 1, GL_FALSE, glm::value_ptr(r_view));
-                                     glUniformMatrix4fv(glGetUniformLocation(self->program, "proj"), 1, GL_FALSE, glm::value_ptr(r_proj));
-                                     glUniform1f(glGetUniformLocation(self->program, "time"), (float) glfwGetTime());
-                                   }))->at({180, 15, -350}));
+        -0.5f * scale, 0.000f * scale, -0.28f * scale, 1.f, 0.f, 0.f, 1.f,
+        +0.5f * scale, 0.000f * scale, -0.28f * scale, 0.f, 1.f, 0.f, 1.f,
+        +0.0f * scale, 0.000f * scale, +0.58f * scale, 0.f, 0.f, 1.f, 1.f,
+        }, [](l_demo* self) {
+        glUniform3f(glGetUniformLocation(self->program, "translation"), self->pos.x, self->pos.y, self->pos.z);
+        glUniformMatrix4fv(glGetUniformLocation(self->program, "view"), 1, false, glm::value_ptr(r_view));
+        glUniformMatrix4fv(glGetUniformLocation(self->program, "proj"), 1, false, glm::value_ptr(r_proj));
+        glUniform1f(glGetUniformLocation(self->program, "time"), (float) glfwGetTime());
+      }))->at({180, 15, -350}));
+      break;
+    }
+    case ST_FRAG: {
+      l_objs.push_back((new l_text(r_mdsemibold, l_fragtitle, 72.f, {.outline=false, .scale=0.167f, .axis=vec2(1., -0.5)}))->at({-225, 55, -345}));
+      l_objs.push_back((new l_text(r_mdsemibold, l_fraginfo, 72.f, {.outline=false, .scale=0.1f, .axis=vec2(1., -0.5)}))->at({-225, 30, -345}));
+      break;
+    }
+    case ST_FRAG_EX: {
+      l_objs.push_back((new l_text(r_mdsemibold, l_fragtitle, 72.f, {.outline=false, .scale=0.167f, .axis=vec2(1., 0.)}))->at({-60, 45, -475}));
+      l_objs.push_back((new l_text(r_smsemibold, l_fragexinfo, 24.f, {.outline=false, .scale=0.167f, .axis=vec2(1., 0.)}))->at({-60, 30, -475}));
+      l_objs.push_back((new l_demo("res/fragdemo.vert", "res/fragdemo.frag", { 3, 2 }, {
+        -0.5f, -0.5f, 0.f, 0.f, 0.f,
+        +0.5f, -0.5f, 0.f, 1.f, 0.f,
+        +0.5f, +0.5f, 0.f, 1.f, 1.f,
+
+        +0.5f, +0.5f, 0.f, 1.f, 1.f,
+        -0.5f, +0.5f, 0.f, 0.f, 1.f,
+        -0.5f, -0.5f, 0.f, 0.f, 0.f,
+      }, [](l_demo* self) {
+        const float scale = 50.f;
+        glUniform3f(glGetUniformLocation(self->program, "translation"), self->pos.x, self->pos.y, self->pos.z);
+        glUniformMatrix4fv(glGetUniformLocation(self->program, "view"), 1, false, glm::value_ptr(r_view));
+        glUniformMatrix4fv(glGetUniformLocation(self->program, "proj"), 1, false, glm::value_ptr(r_proj));
+        float progress = fmod((float) glfwGetTime() * 1000.f - self->start, 4000.f) / 2000.f;
+        if (progress > 1.f) {
+          progress = 2.f - progress;
+        }
+        glUniform1f(glGetUniformLocation(self->program, "time"), progress);
+        glUniform1f(glGetUniformLocation(self->program, "size"), 25.f);
+        glUniform1f(glGetUniformLocation(self->program, "scale"), (float)scale);
+      }))->at({45, 15, -475}));
+      break;
+    }
+    case ST_DETOUR_RAYMARCHING: {
+      l_objs.push_back((new l_text(r_mdsemibold, l_raymarchingtitle, 72.f, {.outline=false, .scale=0.167f, .axis=vec2(1., 0.)}))->at({-360, 190, -400}));
+      l_objs.push_back((new l_text(r_mdsemibold, l_raymarchinginfo, 72.f, {.outline=false, .scale=0.1f, .axis=vec2(1., 0.)}))->at({-360, 165, -400}));
+      break;
+    }
+    case ST_DETOUR_RAYMARCHING_EX: {
+      l_objs.push_back((new l_text(r_mdsemibold, l_raymarchingtitle, 72.f, {.outline=false, .scale=0.167f, .axis=vec2(1., 0.)}))->at({200, 190, -400}));
+      l_objs.push_back((new l_demo("res/fragdemo.vert", "res/raymarching.frag", { 3, 2 }, {
+        -1.25f, -0.75f, 0.f, 0.f, 0.f,
+        +1.25f, -0.75f, 0.f, 0.5f, 0.f,
+        +1.25f, +0.75f, 0.f, 0.5f, 0.5f,
+
+        +1.25f, +0.75f, 0.f, 0.5f, 0.5f,
+        -1.25f, +0.75f, 0.f, 0.f, 0.5f,
+        -1.25f, -0.75f, 0.f, 0.f, 0.f,
+      }, [](l_demo* self) {
+        const float scale = 75.f;
+        glUniform3f(glGetUniformLocation(self->program, "translation"), self->pos.x, self->pos.y, self->pos.z);
+        glUniformMatrix4fv(glGetUniformLocation(self->program, "view"), 1, false, glm::value_ptr(r_view));
+        glUniformMatrix4fv(glGetUniformLocation(self->program, "proj"), 1, false, glm::value_ptr(r_proj));
+        glUniform1f(glGetUniformLocation(self->program, "time"), (float)glfwGetTime());
+        glUniform1f(glGetUniformLocation(self->program, "aspect"), 2.5f / 1.5f);
+        glUniform1f(glGetUniformLocation(self->program, "size"), 25.f);
+        glUniform1f(glGetUniformLocation(self->program, "scale"), (float)scale);
+      }))->at({293.75, 130, -400}));
+      break;
+    }
+    case ST_GEOMETRY: {
+      l_objs.push_back((new l_text(r_mdsemibold, l_geometrytitle, 72.f, {.outline=false, .scale=0.167f, .axis=vec2(1., 0.)}))->at({-55, -110, -480}));
+      l_objs.push_back((new l_text(r_mdsemibold, l_geometryinfo, 72.f, {.outline=false, .scale=0.1f, .axis=vec2(1., 0.)}))->at({-55, -135, -480}));
+      break;
     }
   }
 }
@@ -362,4 +501,9 @@ const std::vector<std::pair<vec3, vec2>> l_stageposes {
   {{16, -100, -190}, {-135, 0}},
   {{4, 131, -179}, {-90, 0}},
   {{86, 22, -211}, {-65, 0}},
+  {{-58, 22, -167}, {-115, 0}},
+  {{3, 5, -253}, {-90, 0}},
+  {{-265, 155, -181}, {-90, 0}},
+  {{293, 138, -200}, {-90, 0}},
+  {{20.4, -138, -276.5}, {-90, 0}},
 };

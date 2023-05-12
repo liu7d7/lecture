@@ -10,14 +10,24 @@ uniform float radius;
 
 void main() {
   float dist = length(v_pos);
-  if (dist > radius + radius * 0.05) {
+  if (dist > radius + radius * 0.1) {
       discard;
   }
+
   if (dist > radius) {
-    float alpha = 1.0 - (dist - radius) / (radius * 0.05);
-    f_color = vec4(v_color.rgb, alpha * v_color.a);
+    float alpha = 1.0 - (dist - radius) / max(radius * 0.1, 0.01);
+    f_color = vec4(vec3(0.), alpha * v_color.a);
     return;
   }
+
+  if (dist > radius - radius * 0.1) {
+    float alpha = 1.0 - (radius - dist) / max(radius * 0.1, 0.01);
+    vec4 v = v_color;
+    v.xyz *= (1 - alpha);
+    f_color = v;
+    return;
+  }
+
   f_color = v_color;
   gl_FragDepth = 1.;
 }

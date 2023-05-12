@@ -47,8 +47,9 @@ extern int t_projloc;
 extern int t_viewloc;
 extern int t_texloc;
 
-static const int t_vsize = 10;
-
+static const int t_vsize = 9;
+static const int t_texsizei = 8192;
+static const float t_texsize = 8192.f;
 static const wchar_t t_fmt = L'&';
 
 static const std::wstring t_reset = L"&r";
