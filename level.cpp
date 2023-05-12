@@ -282,11 +282,11 @@ const std::vector<std::wstring> l_pipelinetitle {
 const std::vector<std::wstring> l_pipelineinfo {
   L"- &lOpenGL&r renders &lprimitives&r (triangles, lines, points) to the screen in stages.",
   std::wstring(),
-  L"  > &lCPU&r*               - vertex data is created on the CPU.",
+  L"  > &lCPU&r*               - &lvertex data&r is created on the CPU.",
   L"  > &lVertex Shader&r      - vertex data is transformed to &lscreen space&r.",
   L"  > &lTesselation Shader&r - can be used to &lcreate extra detail&r and is optional.",
   L"  > &lGeometry Shader&r    - can be used to &lcreate extra geometry&r and is optional.",
-  L"  > &lFragment Shader&r    - fragments (portions of a primitive) are processed into",
+  L"  > &lFragment Shader&r    - &lfragments&r (portions of a primitive) are processed into",
   L"                         color and depth information."
 };
 
@@ -373,12 +373,11 @@ const std::vector<std::wstring> l_fragtitle {
 const std::vector<std::wstring> l_fraginfo {
   L"- The Fragment Shader is the &lfinal stage&r of the pipeline.",
   L"",
-  L"- It is responsible for &lprocessing&r fragments into &lcolor&r",
-  L"  and &ldepth&r information.",
+  L"- It is responsible for &lprocessing&r fragments into &lcolor&r and &ldepth&r information.",
   L"",
   L"- Lighting, texturing, and post-processing happen here.",
-  L"  > The vertex information and &lfragCoord&r, or position",
-  L"    of the fragment, can be used to accomplish this."
+  L"  > The vertex information and &lfragCoord&r, or position of the fragment, can be used",
+  L"    to accomplish this."
 };
 
 const std::vector<std::wstring> l_fragexinfo {
@@ -416,7 +415,7 @@ const std::vector<std::wstring> l_raymarchinginfo {
   L"- For each fragment, a ray is cast from the camera that will define the",
   L"  color of the fragment.",
   L"  > When a ray intersects an object, the ray stops being marched along",
-  L"    and the color of the object is returned.",
+  L"    and the color of the object is output.",
   L"",
   L"- By using &lmod&r on the position of the ray, &lrepeating patterns&r can be created.",
 };
@@ -428,7 +427,7 @@ const std::vector<std::wstring> l_geometrytitle {
 const std::vector<std::wstring> l_geometryinfo {
   L"- The Geometry Shader is an &loptional&r stage of the pipeline.",
   L"",
-  L"- The Geometry Shader can be used to transform existing geometry",
+  L"- The Geometry Shader can be used to &ltransform existing geometry&r",
   L"  uploaded by the CPU into new geometry.",
   L"",
   L"- Common uses include making &lwide lines&r, displaying the &lnormals&r",
@@ -540,8 +539,8 @@ void l_onenter() {
       break;
     }
     case ST_FRAG: {
-      auto* et1 = (new l_text(r_mdsemibold, l_fragtitle, 72.f, {.outline=false, .scale=0.167f, .axis=vec2(1., -0.5)}))->at({-225, 55, -345});
-      auto* et2 = (new l_text(r_mdsemibold, l_fraginfo, 72.f, {.outline=false, .scale=0.1f, .axis=vec2(1., -0.5)}))->at({-225, 30, -345});
+      auto* et1 = (new l_text(r_mdsemibold, l_fragtitle, 72.f, {.outline=false, .scale=0.167f, .axis=vec2(1., -0.5)}))->at({-245, 48, -336});
+      auto* et2 = (new l_text(r_mdsemibold, l_fraginfo, 72.f, {.outline=false, .scale=0.1f, .axis=vec2(1., -0.5)}))->at({-245, 23, -336});
       l_objs.push_back(et1);
       l_objs.push_back(et2);
       l_entitiesbystage[ST_FRAG].push_back(et1);
@@ -549,8 +548,8 @@ void l_onenter() {
       break;
     }
     case ST_FRAG_EX: {
-      auto* et1 = (new l_text(r_mdsemibold, l_fragtitle, 72.f, {.outline=false, .scale=0.167f, .axis=vec2(1., 0.)}))->at({-60, 45, -475});
-      auto* et2 = (new l_text(r_smsemibold, l_fragexinfo, 24.f, {.outline=false, .scale=0.167f, .axis=vec2(1., 0.)}))->at({-60, 30, -475});
+      auto* et1 = (new l_text(r_mdsemibold, l_fragtitle, 72.f, {.outline=false, .scale=0.167f, .axis=vec2(1., 0.)}))->at({-10, 45, -475});
+      auto* et2 = (new l_text(r_smsemibold, l_fragexinfo, 24.f, {.outline=false, .scale=0.167f, .axis=vec2(1., 0.)}))->at({-10, 30, -475});
       auto* et3 = (new l_demo("res/fragdemo.vert", "res/fragdemo.frag", { 3, 2 }, {
         -0.5f, -0.5f, 0.f, 0.f, 0.f,
         +0.5f, -0.5f, 0.f, 1.f, 0.f,
@@ -571,7 +570,7 @@ void l_onenter() {
         glUniform1f(glGetUniformLocation(self->program, "time"), progress);
         glUniform1f(glGetUniformLocation(self->program, "size"), 25.f);
         glUniform1f(glGetUniformLocation(self->program, "scale"), (float)scale);
-      }))->at({45, 15, -475});
+      }))->at({95, 15, -475});
       l_objs.push_back(et1);
       l_objs.push_back(et2);
       l_objs.push_back(et3);
@@ -645,8 +644,8 @@ const std::vector<std::pair<vec3, vec2>> l_stageposes {
   /* cpuex */ {{-297, 151, -179.5}, {-90, 0}},
   /* vert */ {{126, 131.3, -366.1}, {-135, 0}},
   /* vertex */ {{126, 22, -211}, {-65, 0}},
-  /* frag */ {{-64, 21, -164}, {-115, 0}},
-  /* fragex */ {{3, 5, -253}, {-90, 0}},
+  /* frag */ {{-55.6, 21, -167.9}, {-115.9, 0}},
+  /* fragex */ {{53, 5, -253}, {-90, 0}},
   /* detour raymarching */ {{-130.2, 151, -302.6}, {-135, 0}},
   /* raymarching ex */ {{293, 138, -200}, {-90, 0}},
   /* geometry sh */ {{110.7, -136.83, -327.463}, {-117.3, 0}},

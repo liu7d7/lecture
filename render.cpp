@@ -135,9 +135,10 @@ void r_update() {
   r_lastx = r_mousex, r_lasty = r_mousey;
 
   if (!l_allowmove) {
-    r_pos = mix(r_pos, l_stageposes[l_stage].first, 0.33f);
-    r_pitch = mix(r_pitch, l_stageposes[l_stage].second.y, 0.33f);
-    r_yaw = mix(r_yaw, l_stageposes[l_stage].second.x, 0.33f);
+    const float m = 0.2f;
+    r_pos = mix(r_pos, l_stageposes[l_stage].first, m);
+    r_pitch = mix(r_pitch, l_stageposes[l_stage].second.y, m);
+    r_yaw = mix(r_yaw, l_stageposes[l_stage].second.x, m);
     if (length(r_pos - l_stageposes[l_stage].first) < 0.1f) {
       if (l_prevstage != l_stage) {
         for (auto& it : l_entitiesbystage[l_prevstage]) {
