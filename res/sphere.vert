@@ -9,10 +9,11 @@ layout(location = 1) out vec3 v_center;
 layout(location = 2) out vec4 v_color;
 
 uniform mat4 proj;
+uniform float scale;
 
 void main() {
   v_pos = pos;
   v_center = center;
   v_color = color;
-  gl_Position = proj * vec4(pos + center, 1.0);
+  gl_Position = proj * vec4(pos * scale + center, 1.0);
 }

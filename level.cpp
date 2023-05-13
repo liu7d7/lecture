@@ -12,6 +12,7 @@ static uint l_spherevao = 0;
 static uint l_spherevbo = 0;
 static uint l_sphereprog = 0;
 static int l_projloc = 0;
+static int l_scaleloc = 0;
 static int l_radloc = 0;
 static const int l_spherevsize = 10;
 
@@ -66,6 +67,8 @@ std::array<float, l_spherevsize * 6> l_spheredefaults(float rad, vec4 color) {
 
 struct l_sphere : public l_obj {
   float radius = 15.f;
+  float lifetime = 45000.f;
+  float anim_length = 250.f;
   vec4 color;
 
   l_sphere(float rad, vec4 color);
@@ -80,8 +83,8 @@ private:
 void l_sphere::update() {
   last_pos = pos;
   pos += vel;
-  if (glfwGetTime() > 4.) {
-    vel *= 1.01f;
+  if (glfwGetTime() * 1000.f - start > lifetime) {
+    remove = true;
   }
 }
 
@@ -98,6 +101,7 @@ void l_sphere::internal_draw() {
   glUseProgram(l_sphereprog);
   glUniformMatrix4fv(l_projloc, 1, GL_FALSE, value_ptr(r_proj));
   glUniform1f(l_radloc, radius);
+  glUniform1f(l_scaleloc, ((glfwGetTime() * 1000 - start) < (lifetime - anim_length)) ? 1.f : 1.f - ((float)glfwGetTime() * 1000 - start - (lifetime - anim_length)) / anim_length);
   glNamedBufferData(l_spherevbo, sizeof(float) * 6 * l_spherevsize, verts.data(), GL_DYNAMIC_DRAW);
   glBindVertexArray(l_spherevao);
   glDrawArrays(GL_TRIANGLES, 0, 6);
@@ -113,6 +117,7 @@ l_sphere::l_sphere(float rad, vec4 color) : radius(rad), color(color), verts(l_s
 
     l_projloc = glGetUniformLocation(l_sphereprog, "proj");
     l_radloc = glGetUniformLocation(l_sphereprog, "radius");
+    l_scaleloc = glGetUniformLocation(l_sphereprog, "scale");
 
     l_sphereinit = true;
   }
@@ -169,7 +174,6 @@ struct l_emitter : public l_obj {
 l_emitter::l_emitter(l_obj* (*f)(vec3), float delay, float rand) : f(f), delay(delay), rand(rand), next_rand(0), last_emit((float)glfwGetTime() * 1000.f) {}
 
 void l_emitter::update() {
-  if (emitted > 2000) return;
   if ((float) glfwGetTime() * 1000.f > last_emit + delay + next_rand) {
     next_rand = (float) (rand * (float)(::rand() % 1000 - 500) / 500.f);
     last_emit = (float) glfwGetTime() * 1000.f;
@@ -205,9 +209,9 @@ void l_init() {
     return t;
   };
 
-  auto* emitter = new l_emitter(f, 250.f, 25.f);
+  auto* emitter = new l_emitter(f, 500.f, 25.f);
 
-  emitter->pos = emitter->last_pos = vec3(30, 24, -80);
+  emitter->pos = emitter->last_pos = vec3(30, 24, -200);
   l_objs.push_back(emitter);
 }
 
@@ -312,7 +316,7 @@ const std::vector<std::wstring> l_cpuexinfo {
   L"&l1&r     &puint32_t&r vertexShader = &lglCreateShader&r(&lGL_VERTEX_SHADER&r);",
   L"      // creating a buffer",
   L"&l2&r     &puint32_t&r buffer;",
-  L"&l3&r     &lglCreateBuffers&r(1, &buffer);",
+  L"&l3&r     &lglCreateBuffers&r(1, buffer);",
   L"      // creating a texture",
   L"&l4&r     &puint32_t&r texture;",
   L"&l5&r     &lglCreateTextures&r(&lGL_TEXTURE_2D&r, 1, &texture);",

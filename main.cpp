@@ -30,8 +30,8 @@ int main() {
   r_width = glfwGetVideoMode(glfwGetPrimaryMonitor())->width;
   r_height = glfwGetVideoMode(glfwGetPrimaryMonitor())->height;
   if (!(r_window = glfwCreateWindow((int)r_width, (int)r_height, "opengl", glfwGetPrimaryMonitor(), nullptr))) throw std::runtime_error("failed to create a window!");
-	
-	glfwMakeContextCurrent(r_window);
+
+  glfwMakeContextCurrent(r_window);
   glfwSwapInterval(1);
 
   if (!gladLoadGLLoader((GLADloadproc)glfwGetProcAddress)) throw std::runtime_error("failed to load OpenGL!");
@@ -55,7 +55,7 @@ int main() {
 
   r_init();
 
-	while (!glfwWindowShouldClose(r_window)) {
+  while (!glfwWindowShouldClose(r_window)) {
     auto tick = update_ticks();
     r_delta = tick.second;
     for (int i = 0; i < std::min(10, tick.first); i++) {
@@ -64,8 +64,8 @@ int main() {
 
     r_draw();
 
-		glfwSwapBuffers(r_window);
-		glfwPollEvents();
+    glfwSwapBuffers(r_window);
+    glfwPollEvents();
   }
   return 0;
 }
